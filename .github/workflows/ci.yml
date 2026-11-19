@@ -1,0 +1,47 @@
+name: CI
+
+# hamr-deploy CI 门禁（v0.2 路线图 阶段 C / C5，2026-11-19 接入）
+#
+# 部署门户为 Vite SPA，当前没有单元测试框架；门禁 = ESLint + 生产构建。
+# build 内含 `tsc -b`，类型错误同样会阻断。
+#
+# 注意：本仓库的 package-lock.json 此前一直未提交（与 mood-calender
+# CI 门禁必红同形的问题），本次一并补齐，且 resolved 统一指向公共
+# registry registry.npmjs.org，不固化本地 npmmirror 镜像。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支的新 push 不取消正在跑的旧 run，失败时便于回看
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: lint / build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
